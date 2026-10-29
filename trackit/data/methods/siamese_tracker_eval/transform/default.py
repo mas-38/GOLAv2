@@ -14,7 +14,10 @@ class SiameseTrackerEval_DefaultDataTransform(SiameseTrackerEval_DataTransform):
     def __init__(self, template_size: Tuple[int, int], template_area_factor: float,
                  with_full_template_image: bool,
                  interpolation_mode: str, interpolation_align_corners: bool,
-                 norm_stats_dataset_name: str, device: torch.device = torch.device('cpu')):
+                 norm_stats_dataset_name: str, device: torch.device = torch.device('cpu'),
+                 missing_mask_file=None):
+        from .missing import MissingModalitySchedule
+        self.missing_schedule = MissingModalitySchedule(missing_mask_file) if missing_mask_file else None
         self.template_size = np.array(template_size)
         self.template_area_factor = template_area_factor
         self.with_full_template_image = with_full_template_image
@@ -56,19 +59,23 @@ class SiameseTrackerEval_DefaultDataTransform(SiameseTrackerEval_DataTransform):
 
         track_frame_data = None
         if task.do_tracker_track is not None:
-            if isinstance(task.do_tracker_track.get_image, list):
+            available = (True, True)
+            if self.missing_schedule is not None:
+                available = self.missing_schedule.get(task.sequence_name, task.do_tracker_track.frame_index)
+                from .missing import decode_available_modalities
+                x = decode_available_modalities(task.do_tracker_track.get_image, available)
+            elif isinstance(task.do_tracker_track.get_image, list):
                 x_v = task.do_tracker_track.get_image[0]()
                 x_i = task.do_tracker_track.get_image[1]()
                 x = np.concatenate([x_v, x_i], axis=-1)
             else:
                 x = task.do_tracker_track.get_image()
 
-            x = torch.from_numpy(x)
-            x = torch.permute(x, (2, 0, 1))
-            x = x.to(self.device)
+            if x is not None:
+                x = torch.from_numpy(x).permute(2, 0, 1).to(self.device)
             track_frame_data = TrackerEvalData_FrameData(task.do_tracker_track.frame_index,
                                                          task.do_tracker_track.gt_bbox,
-                                                         None, {'image': x})
+                                                         None, {'image': x, 'modality_available': available})
         return TrackerEvalData_TaskDesc(task.task_index, task.do_task_creation,
                                         init_frame_data, track_frame_data,
                                         task.do_task_finalization)

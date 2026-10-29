@@ -49,9 +49,11 @@ class TemplateFeatForegroundMaskGeneration(TrackerEvaluationPipeline):
     def prepare_tracking(self, context: TrackerEvaluationPipeline_Context, model_input_params: dict):
         if self.provide_during_tracking:
             do_track_task_ids = []
+            active_ids = context.temporary_objects.get('task_ids')
             for task in context.input_data.tasks:
                 if task.tracker_do_tracking_context is not None:
-                    do_track_task_ids.append(task.id)
+                    if active_ids is None or task.id in active_ids:
+                        do_track_task_ids.append(task.id)
 
             if len(do_track_task_ids) > 0:
                 model_input_params['z_feat_mask'] = self.template_mask_cache.get_batch(do_track_task_ids)

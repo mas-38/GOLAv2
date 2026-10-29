@@ -24,7 +24,7 @@ def build_one_stream_tracker_pipeline(pipeline_config: dict, config: dict, devic
         build_template_updater(pipeline_config['template_update'], common_config, device),
         common_config['interpolation_mode'], common_config['interpolation_align_corners'],
         common_config['normalization'],
-        visualization)
+        visualization, missing_baseline=config['type'] == 'DINOv2Missing')
 
     pipelines = [main_pipeline]
 
@@ -47,7 +47,7 @@ def _build_plugins(plugins_config, config, device):
             pipelines.append(OnlineTemplateFeatForegroundMaskGeneration(config['common']['template_size'], config['common']['template_feat_size'],
                                                                         plugin_config['template_area_factor'],
                                                                         config['run']['runner']['test']['evaluator']['pipeline']['template_update']['update_threshold'],
-                                                                        device))
+                                                                        device, per_modality=config['type'] == 'DINOv2Missing'))
         else:
             raise ValueError('Unknown plugin type: {}'.format(plugin_config['type']))
     return pipelines

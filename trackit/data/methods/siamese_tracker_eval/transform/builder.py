@@ -5,6 +5,8 @@ from .default import SiameseTrackerEval_DefaultDataTransform
 
 
 def build_data_transform(transform_config: dict, config: dict, device: torch.device = torch.device('cpu')):
+    if transform_config.get('missing_mask_file') and config['type'] != 'DINOv2Missing':
+        raise ValueError('Missing-modality schedules require DINOv2Missing')
     common_config = config['common']
     print('transform config:\n' + pretty_format(transform_config))
     if transform_config['type'] == 'default':
@@ -15,6 +17,6 @@ def build_data_transform(transform_config: dict, config: dict, device: torch.dev
                                                        common_config['interpolation_mode'],
                                                        common_config['interpolation_align_corners'],
                                                        common_config['normalization'],
-                                                       device)
+                                                       device, transform_config.get('missing_mask_file'))
     else:
         raise ValueError(f"Unsupported transform type: {transform_config['type']}")

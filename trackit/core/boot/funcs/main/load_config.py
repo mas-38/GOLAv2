@@ -17,4 +17,9 @@ def load_config(runtime_vars):
         config['model']['weight_path'] = []
         config['model']['eval'] = False
 
+    missing_mask_file = getattr(runtime_vars, 'missing_mask_file', None)
+    if missing_mask_file:
+        if config['type'] != 'DINOv2Missing':
+            raise ValueError('--missing_mask_file requires DINOv2Missing')
+        config['run']['data']['eval']['transform']['missing_mask_file'] = os.path.abspath(missing_mask_file)
     return config

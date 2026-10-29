@@ -20,7 +20,8 @@ class TemplateUpdater:
     def initialize(self, task_id, template: torch.Tensor):
         ...
 
-    def update(self, task_id, confidence: float, x: torch.Tensor, bbox: np.ndarray):
+    def update(self, task_id, confidence: float, x: torch.Tensor, bbox: np.ndarray,
+               modality_available=(True, True)):
         ...
 
     def delete(self, task_id) -> None:

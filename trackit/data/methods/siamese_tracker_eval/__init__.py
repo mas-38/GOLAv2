@@ -18,3 +18,4 @@ class SiameseTrackerEvalDataWorker_Task:
     do_tracker_init: Optional[SiameseTrackerEvalDataWorker_FrameContext]
     do_tracker_track: Optional[SiameseTrackerEvalDataWorker_FrameContext]
     do_task_finalization: bool
+    sequence_name: str = ""

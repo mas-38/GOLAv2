@@ -7,7 +7,6 @@ from timm.scheduler.scheduler import Scheduler as timmScheduler
 from trackit.core.runtime.metric_logger import get_current_local_metric_logger, get_current_metric_logger
 from trackit.data import HostDataPipeline
 from trackit.core.runtime.context.task import get_current_task_context
-from trackit.models.methods.GOLA.modules.gola import compute_rand_pair_orth_loss
 from trackit.runner import Runner
 from trackit.models import ModelInstance
 from trackit.data.protocol.train_input import TrainData
@@ -26,7 +25,8 @@ class DefaultTrainer(Runner):
                  optimization_modules: OptimizationModulesAndOptions,
                  distributed_data_parallel_option: Optional[DistributedDataParallelOption],
                  torch_compile_options: Optional[dict],
-                 detect_unused_parameters: bool = True):
+                 detect_unused_parameters: bool = True, gola_orthogonal_loss_weight: float = 0.):
+        self._gola_orthogonal_loss_weight = gola_orthogonal_loss_weight
         self._model_instance = model
         self._raw_model = model.model
         self._criterion = criterion
@@ -158,8 +158,12 @@ class DefaultTrainer(Runner):
                 update_grad = ((self._iteration + 1) % self._grad_accumulation_steps) == 0
 
                 # Zekai Shao: Add orthogonal loss
-                orth_loss = compute_rand_pair_orth_loss(self._model_instance.model, weight=1.4e-3, n_groups=8)
-                metrics.update({"orth": orth_loss.detach().cpu().item()})
+                orth_loss = 0.
+                if self._gola_orthogonal_loss_weight:
+                    from trackit.models.methods.GOLA.modules.gola import compute_rand_pair_orth_loss
+                    orth_loss = compute_rand_pair_orth_loss(self._model_instance.model,
+                                                           weight=self._gola_orthogonal_loss_weight, n_groups=8)
+                    metrics.update({"orth": orth_loss.detach().cpu().item()})
 
                 loss_scale, grad_norm = self._parameter_updater.backward_and_unscale(
                     criterion_output.loss + orth_loss,

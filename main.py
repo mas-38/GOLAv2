@@ -41,6 +41,7 @@ def setup_arg_parser():
     parser.add_argument('--kill_other_python_processes', action='store_true')
     parser.add_argument('--multiprocessing_start_method_spawn', action='store_true')
     parser.add_argument('--weight_path', type=str, action='append')
+    parser.add_argument('--missing_mask_file', type=str, help='SCDT JSON with per-sequence [RGB, TIR] availability')
 
     return parser
 

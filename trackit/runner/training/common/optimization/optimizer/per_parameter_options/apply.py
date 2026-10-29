@@ -25,7 +25,10 @@ def parse_optimizer_per_params_config(model: nn.Module, criterion: Optional[nn.M
     # model_named_parameters = {name: param for name, param in model.named_parameters() if param.requires_grad}
 
     # Zekai Shao: Only train gola, token type embedding and head
-    model_named_parameters = {name: param for name, param in model.named_parameters() if param.requires_grad and "lora.GA" in name or "lora.GB" in name or "embed" in name or "head" in name}
+    model_named_parameters = {name: param for name, param in model.named_parameters() if param.requires_grad}
+    if optimizer_config.get('parameter_selection') == 'gola':
+        model_named_parameters = {name: param for name, param in model_named_parameters.items()
+                                  if any(key in name for key in ('lora.GA', 'lora.GB', 'embed', 'head'))}
 
     criterion_named_parameters = {name: param for name, param in criterion.named_parameters() if param.requires_grad} if criterion is not None else None
 

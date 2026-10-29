@@ -43,7 +43,7 @@ def _prepare(batch_index: int, evaluation_task: EvaluationTask, datasets: Sequen
            SiameseTrackerEvalDataWorker_Task(evaluation_task.task_index,
                                              track_context,
                                              init_frame_context, track_frame_context,
-                                             evaluation_task.do_task_finalization)
+                                             evaluation_task.do_task_finalization, sequence.get_name())
 
 
 class SiameseTrackEvaluationDataInputWorker(torch.utils.data.dataset.Dataset):

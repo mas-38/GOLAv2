@@ -22,6 +22,8 @@ from ... import TrackerEvaluationPipeline
 
 @dataclass
 class _LocalContext:
+    last_bbox: Optional[np.ndarray] = None
+    last_confidence: float = 1.
     reset_frame_indices: List[int] = field(default_factory=list)
     siamfc_cropping_params_provider: Optional[CroppingParameterProvider] = None
 
@@ -36,7 +38,8 @@ class OneStreamTracker_Evaluation_MainPipeline(TrackerEvaluationPipeline):
                  template_updater: TemplateUpdater,
                  interpolation_mode: str, interpolation_align_corners: bool,
                  norm_stats_dataset_name: str,
-                 visualization: bool):
+                 visualization: bool, missing_baseline: bool = False):
+        self.missing_baseline = missing_baseline
         self.template_image_size = template_image_size
         self.search_region_image_size = search_region_image_size
 
@@ -111,6 +114,7 @@ class OneStreamTracker_Evaluation_MainPipeline(TrackerEvaluationPipeline):
                 task_context = self.all_tracking_task_local_contexts[task.id]
                 task_context.siamfc_cropping_params_provider = cropping_params_provider
                 task_context.reset_frame_indices.append(init_context.frame_index)
+                task_context.last_bbox = init_context.gt_bbox.copy()
 
                 self.template_updater.initialize(task.id, init_context.input_data['curated_image'])
 
@@ -119,9 +123,17 @@ class OneStreamTracker_Evaluation_MainPipeline(TrackerEvaluationPipeline):
         task_ids = []
         image_size_list = []
         frame_indices = []
+        modality_flags = []
+        context.temporary_objects["task_ids"] = task_ids
         for task in context.input_data.tasks:
             if task.tracker_do_tracking_context is not None:
                 track_context = task.tracker_do_tracking_context
+                available = track_context.input_data.get('modality_available', (True, True))
+                if self.missing_baseline and not any(available):
+                    local = self.all_tracking_task_local_contexts[task.id]
+                    context.result.submit(task.id, local.last_bbox.copy(), local.last_confidence)
+                    continue
+                modality_flags.append(available)
                 template_image_mean = self.all_tracking_template_image_mean_cache.get(task.id)
                 cropping_params_provider = self.all_tracking_task_local_contexts[
                     task.id].siamfc_cropping_params_provider
@@ -154,6 +166,8 @@ class OneStreamTracker_Evaluation_MainPipeline(TrackerEvaluationPipeline):
         self.image_normalization_transform_(x)
 
         model_input_params.update({'z': z, 'x': x, 'd': d})
+        if self.missing_baseline:
+            model_input_params['modality_available'] = torch.tensor(modality_flags, dtype=torch.bool, device=self.device)
 
     def on_tracked(self, model_outputs, context):
         if model_outputs is None:
@@ -225,6 +239,8 @@ class OneStreamTracker_Evaluation_MainPipeline(TrackerEvaluationPipeline):
             predicted_score = all_predicted_score[index].item()
             predicted_bounding_box_on_full_search_image = all_predicted_bounding_box_on_full_search_image[index]
             local_task_context = self.all_tracking_task_local_contexts[task_id]
+            local_task_context.last_bbox = predicted_bounding_box_on_full_search_image.copy()
+            local_task_context.last_confidence = predicted_score
             local_task_context.siamfc_cropping_params_provider.update(predicted_score,
                                                                       predicted_bounding_box_on_full_search_image,
                                                                       image_size)
@@ -251,9 +267,15 @@ class OneStreamTracker_Evaluation_MainPipeline(TrackerEvaluationPipeline):
 
     def do_custom_update(self, model, raw_model, context):
         for task in context.input_data.tasks:
+            if task.tracker_do_tracking_context is None:
+                continue
+            data = task.tracker_do_tracking_context.input_data
+            available = data.get('modality_available', (True, True))
+            if self.missing_baseline and not any(available):
+                continue
             self.template_updater.update(task.id, context.result.get(task.id).confidence,
-                                         task.tracker_do_tracking_context.input_data['image'],
-                                         context.result.get(task.id).box)
+                                         data['image'], context.result.get(task.id).box,
+                                         available if self.missing_baseline else (True, True))
 
     def end(self, context):
         for task in context.input_data.tasks:

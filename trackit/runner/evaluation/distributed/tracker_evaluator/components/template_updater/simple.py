@@ -43,9 +43,15 @@ class SimpleTemplateUpdater(TemplateUpdater):
     def initialize(self, task_id, template: torch.Tensor):
         self.template_cache.put(task_id, template)
 
-    def update(self, task_id, confidence: float, x: torch.Tensor, bbox: np.ndarray):
-        if confidence > self.threshold:
+    def update(self, task_id, confidence: float, x: torch.Tensor, bbox: np.ndarray,
+               modality_available=(True, True)):
+        if confidence > self.threshold and any(modality_available):
             d = self._crop_template(x, bbox)
+            if not all(modality_available):
+                old = self.template_cache.get(task_id)
+                for modality, available in enumerate(modality_available):
+                    if not available:
+                        d[3 * modality:3 * (modality + 1)] = old[3 * modality:3 * (modality + 1)]
             self.template_cache.update(task_id, d)
 
     def delete(self, task_id):

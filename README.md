@@ -1,3 +1,5 @@
+> Local baseline: [Pure DINOv2 missing-modality tracking](docs/dinov2_missing_baseline.md) (entry point: `DINOv2Missing dinov2`).
+
 # [AAAI2026] Group Orthogonal Low-Rank Adaptation for RGB-T Tracking
 
 Official implementation of [Group Orthogonal Low-Rank Adaptation for RGB-T Tracking](https://arxiv.org/abs/2512.05359). (AAAI 2026)

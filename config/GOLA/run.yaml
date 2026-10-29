@@ -248,10 +248,12 @@ data:
 runner:
   train:
     type: "default_train"
+    gola_orthogonal_loss_weight: 1.4e-3
 
     optimization:
       optimizer:
         type: "AdamW"
+        parameter_selection: "gola"
         lr: 1.e-4
         weight_decay: 0.1
         fused: false
