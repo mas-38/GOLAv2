@@ -1,0 +1,104 @@
+{
+  "schema": "dinov3-rgbt-temporal-validation/v1",
+  "verified_utc": "2026-11-01T15:25:43.616632+00:00",
+  "branch": "codex/dinov3-rgbt-temporal-v1",
+  "base_commit": "27833e243ae3208ed266ccb2ed20ceb00f05eeb2",
+  "training_started": false,
+  "source_files_sha256": {
+    "finetune_dinov3_rgbt.py": "ec8465dceda6e7285543be35a95b7d50c144827e7541841a11c3caea256ed1fe",
+    "evaluate_dinov3_rgbt.py": "14e340c897d05f3dc31b8d7c25e8f827e1f287cbe0f86c549b5dc28ca58f7398",
+    "analyze_dinov3_rgbt_training.py": "569677be7aacf24dc3d709303978218f79f6dd3af92f9d802aa93afaef90a8d7",
+    "benchmarks/check_dinov3_rgbt.py": "49471916fa3604f7a86f2b43b3661af1e38503486173801c1f1815650c671159",
+    "config/DINOv3Missing/temporal_v1.yaml": "74178645d1737bef1d72963dd49319cc4b44acc5612c16ffc34bc1cb5a3d914b",
+    "trackit/data/methods/rgbt_temporal.py": "dff3a454cd01c4eb9cfaad76332d016168a30130f16d4d3689af6c0cba294fbd",
+    "trackit/runner/training/rgbt_temporal.py": "bda37ee9c3e8cc4ea257a813991d12f31696f703e402a85b5aebf788c7374746",
+    "tests/test_dinov3_missing.py": "c409c9354c009c2e783370d7a37bc6e980969155da5f9072539e8df9db2775b2",
+    "trackit/models/methods/dinov3_missing/__init__.py": "24b01897d721dd570011a5a883923ee31ba1209303b488e11d16367fa7e69038",
+    "trackit/models/methods/dinov3_missing/checkpoint.py": "2c0b6e85e14d60c6493365480efcf9916ac974888437c8bf6aa71a7cd24d8a8c",
+    "trackit/models/methods/dinov3_missing/model.py": "9689d725a908c5053f9a066c4c8739cdb5bb08759f1b8b837263b9f1bc616512",
+    "trackit/models/methods/dinov3_missing/modules.py": "b687819ce011dbbc841da7e6ff9ac66fa4f7df7be14964078c0a71aa1007596e",
+    "trackit/models/methods/dinov3_missing/pipeline.py": "6fa2b424ec2b98a45ef31f629585b20d461f172b23848621ac2364a08d26b15b",
+    "trackit/models/methods/dinov3_missing/runtime.py": "85b628fb395823dfc994e782f0cbd084049a6bc4081d6aac391f1c639f45689b"
+  },
+  "cpu_tests": {
+    "count": 57,
+    "seconds": 5.125,
+    "passed": true,
+    "command": "CUDA_VISIBLE_DEVICES='' OMP_NUM_THREADS=2 OPENBLAS_NUM_THREADS=1 python -m unittest discover -s tests -v",
+    "log_sha256": "b347fce923e93faf8bc1e28ac59350c3f6874f29bb016440556e20456b9a74f3"
+  },
+  "full_size_gpu_backward_checks": {
+    "training_started": false,
+    "checks": [
+      {
+        "stage": "adapt",
+        "batch_size": 16,
+        "loss": 2.6209423542022705,
+        "forward_backward_seconds": 0.7632409209618345,
+        "gradient_tensors": 87,
+        "all_gradients_finite": true,
+        "frozen_parameters_without_gradients": true,
+        "module_gradients": {},
+        "optimizer_updates": 0,
+        "reference_is_adapted": false,
+        "peak_gpu_memory_mib": 5174.25244140625
+      },
+      {
+        "stage": "temporal",
+        "batch_size": 8,
+        "loss": 1.872156023979187,
+        "forward_backward_seconds": 0.35009113600244746,
+        "gradient_tensors": 97,
+        "all_gradients_finite": true,
+        "frozen_parameters_without_gradients": true,
+        "module_gradients": {
+          "future_predictor": {
+            "total": 29,
+            "with_gradient": 29
+          },
+          "reconstructor": {
+            "total": 42,
+            "with_gradient": 42
+          },
+          "fusion": {
+            "total": 14,
+            "with_gradient": 14
+          }
+        },
+        "optimizer_updates": 0,
+        "reference_is_adapted": false,
+        "peak_gpu_memory_mib": 1225.009765625
+      }
+    ],
+    "note": "Real-clip repeated batches, forward/backward only. No optimizer constructed, parameters updated, or model checkpoint exported. Timings are cold checks, not training ETA."
+  },
+  "data_layout": {
+    "train": {
+      "sequences": 979,
+      "paired_frames": 514081,
+      "invalid_annotation_rows": 1574,
+      "manifest_sha256": "2c8d3b9ebbb5049412015d8c2fd3cadce3a5be9ce43cad23930bff5287a0179c",
+      "checks": "All sequence frame/annotation counts; paired image headers at first/last frame"
+    },
+    "test": {
+      "sequences": 245,
+      "paired_frames": 220703,
+      "invalid_annotation_rows": 533,
+      "manifest_sha256": "33f22a5760a41037f63225ef74f08d1b721b4928f45dd80e506f61fac641d678",
+      "checks": "All sequence frame/annotation counts; paired image headers at first/last frame"
+    }
+  },
+  "fixes_validated": [
+    "No-grad warm-up disables autocast weight cache before the grad-enabled current frame",
+    "Frozen reference compute precision is explicit and fingerprinted",
+    "Future and reconstruction attention are batched by availability without mixing tracks",
+    "Complete optimizer/scheduler/scaler/RNG and mid-epoch sample position restoration",
+    "No future/hidden image is passed into causal model inputs; real cache entries only"
+  ],
+  "limitations": [
+    "GPU checks repeat real clips for batch shapes and do not test convergence",
+    "Reference used for preflight is not yet TIR-adapted and is never exported as a training teacher",
+    "Depth remains fixed (default 3), template update uses confidence threshold; rollout policy training is outside v1",
+    "Short fixed-crop training clips differ from long-sequence closed-loop deployment"
+  ]
+}

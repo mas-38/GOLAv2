@@ -1,0 +1,66 @@
+version: dinov3-rgbt-temporal-v1
+seed: 42
+model:
+  official_source: /home/projects/dinov3
+  official_revision: 6876159a11b4df116f30f667f8c9888617df0751
+  initialization: /home/projects/GOLAv2/output/dinov3_rgb_got10k/dinov3rgb_v1_c1399651_b64_e20/exports/dinov3_rgbt_init_e20.safetensors
+  initialization_sha256: 819b43d675d93017c58e344b74097796db1189f16f3542eca26642d7bed6bc75
+  template_feat_size: [8, 8]
+  search_feat_size: [16, 16]
+  tracking: {independent_depth: 6, rank: 32, alpha: 64, dropout: 0.05}
+  temporal: {hidden: 256, heads: 8, horizons: [1, 2], roi_hw: [4, 4]}
+data:
+  root: /root/autodl-tmp/datasets/lasher
+  train_split: train
+  train_sequences: 979
+  test_split: test
+  test_sequences: 245
+  history_frames: 3
+  workers: 8
+stages:
+  adapt:
+    epochs: 10
+    samples_per_epoch: 32768
+    batch_size: 16
+    lr: 0.0001
+    min_lr: 0.000001
+    warmup_epochs: 1
+    weight_decay: 0.05
+    head_lr_multiplier: 1.0
+  temporal:
+    epochs: 10
+    samples_per_epoch: 8192
+    batch_size: 8
+    lr: 0.0003
+    min_lr: 0.000001
+    warmup_epochs: 1
+    weight_decay: 0.05
+    head_lr_multiplier: 0.1
+loss:
+  reconstruction_weight: 0.5
+  appearance_weight: 0.5
+  motion_weight: 0.1
+  visibility_weight: 0.05
+runtime:
+  torch_threads: 4
+  precision: bfloat16
+  max_grad_norm: 1.0
+  log_interval: 20
+  checkpoint_interval: 500
+  train_reconstruction_steps: 5
+  inference_reconstruction_steps: 3
+  template_update_threshold: 0.84
+  checkpoint_selection: last_epoch
+  # Depth and template policies remain fixed in v1. No claimed rollout-trained policy.
+  reconstruction_budget_policy: fixed
+  template_policy: confidence_threshold_real_modalities_only
+wandb:
+  enabled: true
+  entity: mas-38-anhui-university
+  project: DINOv3RGBT
+evaluation:
+  modes: [complete, rgb_only, tir_only, synthetic_missing]
+  force_complete_initialization: true
+  both_missing: retain_previous_box
+  synthetic_missing_persistence: 0.8
+  select_checkpoints_on_test: false

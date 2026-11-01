@@ -1,0 +1,66 @@
+id: dinov3_rgbt_temporal_v1
+version: 1.0.0
+status: prepared_not_submitted
+parent_rgb_training_commit: c13996517758f035387416db223f55903c1b5176
+parent_resume_fix_commit: 27833e243ae3208ed266ccb2ed20ceb00f05eeb2
+branch: codex/dinov3-rgbt-temporal-v1
+configuration: config/DINOv3Missing/temporal_v1.yaml
+initialization:
+  path: /home/projects/GOLAv2/output/dinov3_rgb_got10k/dinov3rgb_v1_c1399651_b64_e20/exports/dinov3_rgbt_init_e20.safetensors
+  sha256: 819b43d675d93017c58e344b74097796db1189f16f3542eca26642d7bed6bc75
+  rgb_best_epoch: 20
+  reported_rgb_got10k_test:
+    AO: 0.711
+    SR50: 0.84
+    SR75: 0.656
+    source: User-provided official result screenshot
+data:
+  train: LasHeR official 979 sequences
+  test: LasHeR official 245 sequences
+  train_manifest_sha256: 2c8d3b9ebbb5049412015d8c2fd3cadce3a5be9ce43cad23930bff5287a0179c
+  test_manifest_sha256: 33f22a5760a41037f63225ef74f08d1b721b4928f45dd80e506f61fac641d678
+  test_used_for_selection: false
+stages:
+  adapt:
+    epochs: 10
+    samples_per_epoch: 32768
+    batch_size: 16
+    lr: 0.0001
+    min_lr: 1.0e-06
+    warmup_epochs: 1
+    weight_decay: 0.05
+    head_lr_multiplier: 1.0
+  temporal:
+    epochs: 10
+    samples_per_epoch: 8192
+    batch_size: 8
+    lr: 0.0003
+    min_lr: 1.0e-06
+    warmup_epochs: 1
+    weight_decay: 0.05
+    head_lr_multiplier: 0.1
+modules:
+  future_horizons:
+  - 1
+  - 2
+  future_representation: Object ROI appearance + anchor-relative motion + ROI usability
+  reconstruction: Shared recurrent three-condition cross-attention, 256-channel state,
+    768-channel readout
+  supervised_depths:
+  - 1
+  - 3
+  - 5
+  default_online_depth: 3
+  fusion: Gated isolated-to-joint residual with zero-initialized Phi output
+  history: Real causal isolated search observations with immutable space fingerprint
+checkpoint_selection: Fixed final epoch at each stage
+training_entry: finetune_dinov3_rgbt.py (default preflight; --execute required)
+evaluation_entry: evaluate_dinov3_rgbt.py (default plan; --execute required)
+analysis_entry: analyze_dinov3_rgbt_training.py
+validation_report: docs/research/dinov3_rgbt_temporal_validation_2026-11-01.json
+cpu_tests: 57
+no_dataset_training_started: true
+actual_gpu_optimizer_updates: 0
+deferred:
+- Rollout-supervised reconstruction-budget policy
+- Rollout-supervised template-action policy
