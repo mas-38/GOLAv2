@@ -22,9 +22,9 @@ def build_plugins(transform_config: dict, config: dict, build_context: BuildCont
 
 @dataclass(frozen=True)
 class PluginRegistrationHelper:
-    extra_transforms = []
-    extra_data_collators = []
-    extra_host_data_pipelines = []
+    extra_transforms: list = field(default_factory=list)
+    extra_data_collators: list = field(default_factory=list)
+    extra_host_data_pipelines: list = field(default_factory=list)
 
     def register(self, transform: Optional[ExtraTransform] = None,
                  data_collator: Optional[ExtraTransform_DataCollector] = None,

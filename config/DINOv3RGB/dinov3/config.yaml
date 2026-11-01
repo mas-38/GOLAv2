@@ -1,0 +1,32 @@
+name: "DINOv3RGB/B-256"
+type: "DINOv3RGB"
+logging:
+  category: "DINOv3RGB"
+  tags: ["DINOv3", "base", "256", "lora", "got10k", "rgb-pretraining"]
+
+common:
+  template_size: [128, 128]
+  search_region_size: [256, 256]
+  template_feat_size: [8, 8]
+  search_region_feat_size: [16, 16]
+  response_map_size: [16, 16]
+  template_feat_data_layout: "NLC"
+  interpolation_mode: "bilinear"
+  interpolation_align_corners: false
+  normalization: "imagenet"
+
+model:
+  backbone:
+    type: "DINOv3"
+    parameters:
+      name: "ViT-B/16"
+      source_dir: "../dinov3"
+      expected_revision: "6876159a11b4df116f30f667f8c9888617df0751"
+      weights: "pretrained_models/dinov3_vitb16_pretrain_lvd1689m-73cec8be.pth"
+  tracking:
+    independent_depth: 6
+    rank: 8
+    alpha: 16
+    dropout: 0.05
+
+run: !include "../run.yaml"

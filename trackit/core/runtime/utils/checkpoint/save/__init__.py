@@ -224,6 +224,9 @@ class LatestCheckpointDumper(_CheckpointDumper):
 
 class CheckpointDumper:
     def __init__(self, checkpoint_dumpers: Iterable[_CheckpointDumper]):
+        # The builder passes a generator; materialize it before partitioning so
+        # metric-based dumpers are not lost after the first iteration.
+        checkpoint_dumpers = tuple(checkpoint_dumpers)
         self._checkpoint_dumpers = tuple(dumper for dumper in checkpoint_dumpers if not isinstance(dumper, _CheckpointDumper_with_metrics))
         self._metric_based_checkpoint_dumpers = tuple(dumper for dumper in checkpoint_dumpers if isinstance(dumper, _CheckpointDumper_with_metrics))
         self._model_weight_dedup_cache: Dict[int, List[str]] = {}  # model weight version -> file path

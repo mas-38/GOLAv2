@@ -67,7 +67,7 @@ def _build_task(task_name: str, branch_config: dict, output_path: Optional[str],
     data_name = branch_config['data']
     runner_name = branch_config['runner']
 
-    metric_logger = build_metric_logger(branch_config.get('logging', None), build_context)
+    metric_logger = build_metric_logger(branch_config.get('logging', None), build_context, output_path, task_name)
     local_metric_logger = metric_logger.get_logger('local')
     assert isinstance(local_metric_logger, LocalMetricLoggerWrapper)
 

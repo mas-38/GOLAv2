@@ -1,0 +1,127 @@
+# Single short RGB task-pretraining run before RGB-T fine-tuning.
+# Epoch triggers are zero based: validate after epochs 2, 5, 10, 15 and 20.
+- path: "run.num_epochs"
+  value: 20
+- path: "model.tracking.rank"
+  value: 32
+- path: "model.tracking.alpha"
+  value: 64
+- path: "run.runner.train.optimization.lr_scheduler.parameters.warmup_epochs"
+  value: 1
+- path: "run.checkpoint"
+  value:
+    - type: "regular"
+      epoch_trigger:
+        interval: 1
+        last: true
+      resumable: true
+      max_to_keep: 20
+    - type: "best"
+      metric: "val/average_overlap_GOT-10k-val"
+      top_k: 1
+      resumable: false
+- path: "run"
+  action: "merge"
+  value:
+    diagnostics:
+      enabled: true
+- path: "run.task.train.logging"
+  action: "merge"
+  value:
+    metric_prefix: "train/"
+    jsonl:
+      enabled: true
+      interval: 50
+      sync_wandb: true
+- path: "run.runner.train.criteria"
+  action: "merge"
+  value:
+    log_diagnostics: true
+- path: "run.task"
+  action: "merge"
+  value:
+    eval:
+      is_train: false
+      data: "eval"
+      runner: "test"
+      epoch_trigger:
+        values: [1, 4, 9, 14, 19]
+      logging:
+        interval: 100
+        metric_prefix: "val/"
+        jsonl:
+          enabled: true
+          interval: 50
+          sync_wandb: true
+        local:
+          header: "GOT-10k val"
+      batch_collective_communication:
+        type: "time"
+        interval: 10
+- path: "run.data"
+  action: "merge"
+  value:
+    eval:
+      type: "siamese_tracker_eval"
+      batch_size: 8
+      num_io_threads: !const "num_io_threads_per_worker"
+      num_workers: !const "num_eval_workers"
+      source:
+        type: "dataset"
+        parameters:
+          datasets:
+            - name: "GOT10k"
+              type: "SOT"
+              splits: ["val"]
+          filters:
+            - type: "data_cleaning.annotation_standard"
+              parameters:
+                bounding_box_format: "XYXY"
+                bounding_box_coordinate_system: "Continuous"
+      sampler:
+        type: "distributed_dynamic_scheduling"
+        shuffle: false
+      transform:
+        type: "default"
+        template_area_factor: 2.0
+      result_collector:
+        async_worker: true
+        log_summary: true
+        dispatch:
+          - match:
+              name_regex: ".*"
+            handlers:
+              - type: "one_pass_evaluation"
+                file_name: "got10k_val"
+- path: "run.runner"
+  action: "merge"
+  value:
+    test:
+      type: "default_eval"
+      inference_engine:
+        type: "plain"
+        auto_mixed_precision:
+          enabled: true
+          dtype: "bfloat16"
+        torch_compile:
+          enabled: false
+      evaluator:
+        type: "default"
+        pipeline:
+          type: "one_stream_tracker"
+          search_region_cropping:
+            type: "simple"
+            min_object_size: 10
+            area_factor: 4.0
+          post_process:
+            type: "box_with_score_map"
+            window_penalty: 0.45
+          template_update:
+            type: "simple"
+            update_threshold: 0.84
+            template_area_factor: 2.0
+          visualization: false
+          plugin:
+            - type: "template_foreground_indicating_mask_generation"
+            - type: "online_template_foreground_indicating_mask_generation"
+              template_area_factor: 2.0

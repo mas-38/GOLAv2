@@ -19,6 +19,9 @@ def _build_backbone(backbone_config: dict, load_pretrained=True, torch_jit_trace
         if torch_jit_trace_compatible:
             backbone_build_params['acc'] = 'none'
         backbone = build_dino_v2_backbone(load_pretrained=load_pretrained, **backbone_build_params)
+    elif backbone_config['type'] == 'DINOv3':
+        from .dinov3.builder import build_dino_v3_backbone
+        backbone = build_dino_v3_backbone(load_pretrained=load_pretrained, **backbone_build_params)
     else:
         raise Exception(f'unsupported {backbone_config["type"]}')
 

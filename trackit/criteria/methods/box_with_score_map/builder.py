@@ -35,4 +35,5 @@ def build_box_with_score_map_criteria(criteria_config: dict):
 
     from . import SimpleCriteria
     return SimpleCriteria(cls_loss, bbox_reg_loss, iou_aware_classification_score,
-                          cls_loss_weight, bbox_reg_loss_weight, cls_loss_name, bbox_reg_loss_name)
+                          cls_loss_weight, bbox_reg_loss_weight, cls_loss_name, bbox_reg_loss_name,
+                          log_diagnostics=criteria_config.get('log_diagnostics', False))

@@ -5,6 +5,7 @@ from .workarounds.numpy import numpy_no_multithreading
 from .funcs.main.load_config import load_config
 from .funcs.main.init_global_context import init_global_context
 from .funcs.main.init_application import prepare_application
+from .funcs.main.local_run_logging import record_local_run
 
 
 def _remove_ddp_parameter(args):
@@ -56,5 +57,6 @@ def main(runtime_vars):
             from .funcs.sweep import prepare_sweep
             prepare_sweep(runtime_vars, context.wandb_instance, config)
 
-        app = prepare_application(runtime_vars, config, context.wandb_instance)
-        app.run()
+        with record_local_run(runtime_vars, config, context.wandb_instance):
+            app = prepare_application(runtime_vars, config, context.wandb_instance)
+            app.run()

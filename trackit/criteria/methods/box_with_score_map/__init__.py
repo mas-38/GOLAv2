@@ -9,7 +9,8 @@ class SimpleCriteria(nn.Module):
     def __init__(self, cls_loss: nn.Module, bbox_reg_loss: nn.Module,
                  iou_aware_classification_score: bool,
                  cls_loss_weight: float, bbox_reg_loss_weight: float,
-                 cls_loss_display_name: str, bbox_reg_loss_display_name: str):
+                 cls_loss_display_name: str, bbox_reg_loss_display_name: str,
+                 log_diagnostics: bool = False):
         super().__init__()
         self.cls_loss = cls_loss
         self.bbox_reg_loss = bbox_reg_loss
@@ -19,6 +20,7 @@ class SimpleCriteria(nn.Module):
         self.cls_loss_display_name = cls_loss_display_name
         self.bbox_reg_loss_display_name = bbox_reg_loss_display_name
         self._across_all_nodes_normalization = True
+        self.log_diagnostics = log_diagnostics
 
     def forward(self, outputs: dict, targets: dict):
         num_positive_samples = targets['num_positive_samples']
@@ -71,5 +73,18 @@ class SimpleCriteria(nn.Module):
 
         metrics = {f'Loss/{self.cls_loss_display_name}': cls_loss_cpu, f'Loss/{self.bbox_reg_loss_display_name}': reg_loss_cpu}
         extra_metrics = {f'Loss/{self.cls_loss_display_name}_unscale': cls_loss_cpu / self.cls_loss_weight, f'Loss/{self.bbox_reg_loss_display_name}_unscale': reg_loss_cpu / self.bbox_reg_loss_weight}
+
+        if self.log_diagnostics and has_positive_samples:
+            with torch.no_grad():
+                probabilities = predicted_score_map.flatten(1).sigmoid()
+                foreground = probabilities[positive_sample_batch_dim_index, positive_sample_feature_map_dim_index]
+                positive_iou = bbox_overlaps(groundtruth_bboxes, predicted_bboxes, is_aligned=True)
+                background_count = probabilities.numel() - foreground.numel()
+                extra_metrics.update({
+                    'diagnostics/positive_iou': positive_iou.mean().item(),
+                    'diagnostics/foreground_confidence': foreground.mean().item(),
+                    'diagnostics/background_confidence': ((probabilities.sum() - foreground.sum()) / max(1, background_count)).item(),
+                    'diagnostics/positive_patches': float(foreground.numel()),
+                })
 
         return CriterionOutput(cls_loss + reg_loss, metrics, extra_metrics)

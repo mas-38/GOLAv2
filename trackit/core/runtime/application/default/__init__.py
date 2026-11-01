@@ -2,6 +2,7 @@ from typing import Optional, Sequence
 from tqdm import tqdm
 import sys
 import logging
+import time
 
 from trackit.miscellanies.torch.distributed import get_world_size
 from trackit.miscellanies.torch.distributed.barrier import torch_distributed_barrier
@@ -52,7 +53,10 @@ def run_task(model_manager: ModelManager, task_desc: ApplicationTaskDescription,
 
         collective_communication.begin(all_batch_collective_communication_registries)
 
+        record_runtime = metric_logger.has_logger('jsonl')
+        previous_end = time.perf_counter()
         for data in local_metric_logger.log_every(data_context.data_input_pipeline):
+            data_ready = time.perf_counter()
             metric_logger.set_step(global_step_counter.get_iteration())
             emit_iteration_begin_event(all_event_registries, is_train)
             runner.run(data)
@@ -60,9 +64,22 @@ def run_task(model_manager: ModelManager, task_desc: ApplicationTaskDescription,
 
             collective_communication.run()
 
+            if record_runtime:
+                batch_seconds = time.perf_counter() - previous_end
+                runtime_metrics = {'timing/data_wait_seconds': data_ready - previous_end,
+                                   'timing/batch_seconds': batch_seconds}
+                if is_train:
+                    runtime_metrics['timing/samples_in_batch'] = batch_size
+                if model_manager is not None:
+                    import torch
+                    if torch.cuda.is_available():
+                        runtime_metrics['memory/cuda_allocated_mib'] = torch.cuda.memory_allocated() / 1024 ** 2
+                        runtime_metrics['memory/cuda_peak_allocated_mib'] = torch.cuda.max_memory_allocated() / 1024 ** 2
+                metric_logger.log(runtime_metrics)
             metric_logger.commit()
             if is_train:
                 global_step_counter.update(batch_size)
+            previous_end = time.perf_counter()
 
         collective_communication.end()  # may call run() as well
 
@@ -138,7 +155,7 @@ class DefaultApplication:
 
             if self._checkpoint_dumper is not None:
                 self._checkpoint_dumper.dump(epoch, get_current_epoch_metrics().get(epoch), self._model_manager.version,
-                                             None, self._all_context.state_dict)
+                                             self._model_manager.state_dict, self._all_context.state_dict)
             else:
                 print('Output path is not set. Skip checkpoint saving.')
 

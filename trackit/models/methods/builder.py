@@ -10,6 +10,9 @@ def get_model_build_context(config: dict) -> ModelBuildingContext:
     elif config['type'] == 'DINOv2Missing':
         from .dinov2_missing.builder import get_build_context
         build_context = get_build_context(config)
+    elif config['type'] == 'DINOv3RGB':
+        from .dinov3_rgb.builder import get_build_context
+        build_context = get_build_context(config)
     else:
         raise NotImplementedError()
     if isinstance(build_context, nn.Module):

@@ -1,0 +1,130 @@
+{
+  "scope": "DINOv3 ViT-B/16 Q/V rank 32, actual GOT-10k pipeline on an isolated 128-sequence fixture, forward/backward/clip only; no optimizer updates in throughput measurements",
+  "results": [
+    {
+      "batch": 16,
+      "workers": 6,
+      "pin_memory": false,
+      "opencv_threads": 1,
+      "rank": 32,
+      "cached_seconds_per_batch": 0.10467529099939081,
+      "cached_samples_per_second": 152.85364719065473,
+      "measured_batches": 64,
+      "end_to_end_seconds_per_batch": 0.1646415967188659,
+      "end_to_end_samples_per_second": 97.18078735181871,
+      "data_wait_mean_seconds": 0.03270011096719827,
+      "batch_p95_seconds": 0.3436840010108426,
+      "peak_allocated_gib": 2.7786898612976074,
+      "attention_ops": [
+        "aten::scaled_dot_product_attention",
+        "aten::_scaled_dot_product_flash_attention",
+        "aten::_flash_attention_forward",
+        "aten::_scaled_dot_product_flash_attention_backward",
+        "aten::_flash_attention_backward"
+      ],
+      "optimizer_steps": 0
+    },
+    {
+      "batch": 32,
+      "workers": 16,
+      "pin_memory": true,
+      "opencv_threads": 1,
+      "rank": 32,
+      "cached_seconds_per_batch": 0.16764068133488763,
+      "cached_samples_per_second": 190.8844544485903,
+      "measured_batches": 64,
+      "end_to_end_seconds_per_batch": 0.13167787379643414,
+      "end_to_end_samples_per_second": 243.01728967366245,
+      "data_wait_mean_seconds": 0.0010573749414106715,
+      "batch_p95_seconds": 0.1592323450022377,
+      "peak_allocated_gib": 4.824972629547119,
+      "attention_ops": [
+        "aten::scaled_dot_product_attention",
+        "aten::_scaled_dot_product_flash_attention",
+        "aten::_flash_attention_forward",
+        "aten::_scaled_dot_product_flash_attention_backward",
+        "aten::_flash_attention_backward"
+      ],
+      "optimizer_steps": 0
+    },
+    {
+      "batch": 64,
+      "workers": 16,
+      "pin_memory": true,
+      "opencv_threads": 1,
+      "rank": 32,
+      "cached_seconds_per_batch": 0.23451562625026176,
+      "cached_samples_per_second": 272.9029234568055,
+      "measured_batches": 64,
+      "end_to_end_seconds_per_batch": 0.2589741111250987,
+      "end_to_end_samples_per_second": 247.12894938399648,
+      "data_wait_mean_seconds": 0.07295541829716967,
+      "batch_p95_seconds": 0.6645883830497041,
+      "peak_allocated_gib": 8.914031982421875,
+      "attention_ops": [
+        "aten::scaled_dot_product_attention",
+        "aten::_scaled_dot_product_flash_attention",
+        "aten::_flash_attention_forward",
+        "aten::_scaled_dot_product_flash_attention_backward",
+        "aten::_flash_attention_backward"
+      ],
+      "optimizer_steps": 0
+    },
+    {
+      "batch": 128,
+      "workers": 20,
+      "pin_memory": true,
+      "opencv_threads": 1,
+      "rank": 32,
+      "cached_seconds_per_batch": 0.399922113167122,
+      "cached_samples_per_second": 320.0623216013828,
+      "measured_batches": 64,
+      "end_to_end_seconds_per_batch": 0.3819267292965378,
+      "end_to_end_samples_per_second": 335.1428171465252,
+      "data_wait_mean_seconds": 0.001307897753576981,
+      "batch_p95_seconds": 0.3862787009566091,
+      "peak_allocated_gib": 17.067821502685547,
+      "attention_ops": [
+        "aten::scaled_dot_product_attention",
+        "aten::_scaled_dot_product_flash_attention",
+        "aten::_flash_attention_forward",
+        "aten::_scaled_dot_product_flash_attention_backward",
+        "aten::_flash_attention_backward"
+      ],
+      "optimizer_steps": 0
+    },
+    {
+      "batch": 64,
+      "workers": 20,
+      "pin_memory": true,
+      "opencv_threads": 1,
+      "rank": 32,
+      "cached_seconds_per_batch": 0.23927226491408268,
+      "cached_samples_per_second": 267.4777205079785,
+      "measured_batches": 64,
+      "end_to_end_seconds_per_batch": 0.18527862114115123,
+      "end_to_end_samples_per_second": 345.4257140182554,
+      "data_wait_mean_seconds": 0.0010152099985134555,
+      "batch_p95_seconds": 0.20088372397003695,
+      "peak_allocated_gib": 8.914032936096191,
+      "attention_ops": [
+        "aten::scaled_dot_product_attention",
+        "aten::_scaled_dot_product_flash_attention",
+        "aten::_flash_attention_forward",
+        "aten::_scaled_dot_product_flash_attention_backward",
+        "aten::_flash_attention_backward"
+      ],
+      "optimizer_steps": 0
+    }
+  ],
+  "selected": {
+    "batch": 64,
+    "workers": 20,
+    "pin_memory": true,
+    "fused_adamw": true,
+    "epochs": 20,
+    "samples_per_epoch": 131072,
+    "optimizer_updates": 40960
+  },
+  "measured_speedup": 3.5544650689824944
+}

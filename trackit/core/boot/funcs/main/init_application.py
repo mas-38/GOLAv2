@@ -9,6 +9,12 @@ from ...workarounds.reproducibility import seed_all_rng, enable_deterministic_co
 
 
 def prepare_application(runtime_vars, config, wandb_instance):
+    performance = config['run'].get('performance', {})
+    if 'torch_num_threads' in performance:
+        torch.set_num_threads(performance['torch_num_threads'])
+    if 'opencv_num_threads' in performance:
+        import cv2
+        cv2.setNumThreads(performance['opencv_num_threads'])
     global_synchronized_rng = np.random.Generator(np.random.PCG64(runtime_vars.seed))
     runtime_vars.seed = runtime_vars.seed + get_rank()
     local_rng = np.random.Generator(np.random.PCG64(runtime_vars.seed))

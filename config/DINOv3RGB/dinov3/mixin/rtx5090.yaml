@@ -1,0 +1,17 @@
+# Apply after fast_transfer. Keep the 20-epoch sample budget and learning rate.
+- path: "run.data.train.global_batch_size"
+  value: 64
+- path: "run.data.train.num_workers"
+  value: 20
+- path: "run.data.eval.batch_size"
+  value: 16
+- path: "run.runner.train.optimization.optimizer"
+  action: "merge"
+  value:
+    fused: true
+- path: "run"
+  action: "merge"
+  value:
+    performance:
+      torch_num_threads: 4
+      opencv_num_threads: 0

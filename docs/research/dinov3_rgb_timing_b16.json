@@ -1,0 +1,23 @@
+{
+  "gpu": "NVIDIA GeForce RTX 5090",
+  "batch_size": 16,
+  "workers": 6,
+  "precision": "bfloat16",
+  "real_sequences": 32,
+  "gpu_measurement_steps": 25,
+  "end_to_end_measurement_steps": 32,
+  "gpu_forward_backward_clip_seconds_mean": 0.11064517511986197,
+  "gpu_seconds_median": 0.11746110999956727,
+  "end_to_end_seconds_mean": 0.1527183379057533,
+  "end_to_end_seconds_median": 0.1132068150327541,
+  "end_to_end_seconds_p95": 0.36734000500291586,
+  "steps_per_epoch": 8192,
+  "epochs": 100,
+  "total_steps": 819200,
+  "gpu_only_hours": 25.17792429394192,
+  "measured_pipeline_hours": 34.75190622566475,
+  "measured_minutes_per_epoch": 20.85114373539885,
+  "peak_memory_gib": 2.7669081687927246,
+  "optimizer_steps": 0,
+  "formal_training_started": false
+}

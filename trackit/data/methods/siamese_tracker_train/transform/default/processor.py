@@ -98,6 +98,7 @@ class SiamTrackerTrainingPairProcessor(SiameseTrackerTrain_DataTransform):
         else:
             _decode_image_with_cache('z', training_pair.template, image_decoding_cache, context)
             _decode_image_with_cache('x', training_pair.search, image_decoding_cache, context)
+            _decode_image_with_cache('d', training_pair.online, image_decoding_cache, context)
         del image_decoding_cache
 
         self.template_siamfc_cropping.do('z', context)

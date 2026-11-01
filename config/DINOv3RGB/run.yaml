@@ -1,0 +1,111 @@
+type: "default"
+num_epochs: 100
+efficiency_assessment:
+  enabled: false
+checkpoint:
+  - type: "regular"
+    epoch_trigger:
+      interval: 1
+      last: true
+    resumable: true
+    max_to_keep: 3
+task:
+  train:
+    is_train: true
+    data: "train"
+    runner: "train"
+    logging:
+      interval: 50
+      local:
+        header: "Epoch: [{epoch}]"
+      wandb:
+        with_epoch: true
+data:
+  train:
+    type: "siamese_tracker_train"
+    global_batch_size: 16
+    num_workers: !const "num_train_workers"
+    num_io_threads: !const "num_io_threads_per_worker"
+    source:
+      type: "dataset"
+      parameters: !include "../_dataset/train-got10k.yaml"
+    sampler:
+      type: "random"
+      samples_per_epoch: 131072
+      seed: 42
+    siamese_training_pair_sampling:
+      positive_sample:
+        sample_mode: "interval"
+        max_gaps: 100
+    transform:
+      type: "default"
+      SiamFC_cropping:
+        template:
+          area_factor: 2.0
+        search_region:
+          area_factor: 4.0
+          scale_jitter: 0.25
+          translation_jitter: 3
+          min_object_size: 10
+      online_bbox_shift:
+        shift_range_x: [0.5, 1]
+        shift_range_y: [0.5, 1]
+      augmentation:
+        - type: "horizontal_flip"
+          target: ["template", "search_region", "online"]
+          probability: 0.5
+          joint: false
+        - type: "color_jitter"
+          target: ["template", "search_region", "online"]
+          brightness: 0.4
+          contrast: 0.4
+          saturation: 0.4
+          joint: false
+        - type: "DeiT_3_aug"
+          target: ["template", "search_region", "online"]
+          joint: true
+      plugin:
+        - type: "box_with_score_map_label_generation"
+        - type: "template_foreground_indicating_mask_generation"
+runner:
+  train:
+    type: "default_train"
+    optimization:
+      optimizer:
+        type: "AdamW"
+        lr: 1.e-4
+        weight_decay: 0.05
+        fused: false
+        per_parameter:
+          - name_regex: '^backbone\.(role_embed$|modality_embed\.)'
+            weight_decay: 0.
+          - type: "zero_1d_param_weight_decay"
+      grad_accumulation_steps: 1
+      max_grad_norm: 1.0
+      zero_grad_set_to_none: true
+      lr_scheduler:
+        type: "timm"
+        sched: "cosine"
+        per_iteration: true
+        parameters:
+          lr_min: 1.e-6
+          warmup_prefix: false
+          warmup_epochs: 2
+          warmup_lr: 1.e-7
+      auto_mixed_precision:
+        enabled: true
+        dtype: "bfloat16"
+    torch_compile:
+      enabled: false
+    distributed_data_parallel:
+      static_graph: true
+    detect_unused_parameters: false
+    criteria:
+      type: "box_with_score_map"
+      classification:
+        type: "binary_cross_entropy"
+        iou_aware_classification_score: true
+        weight: 1.
+      bbox_regression:
+        type: "GIoU"
+        weight: 1.

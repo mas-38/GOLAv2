@@ -1,0 +1,157 @@
+schema_version: 1
+experiment_id: dinov3_rgb_got10k_v1
+version: 1.0.0
+purpose: RGB tracking task pretraining for RGB-T missing-modality fine-tuning
+code:
+  branch: codex/dinov3-rgb-lora-got10k-v1
+  commit: Recorded from Git HEAD at launch in diagnostics/provenance.json
+  configuration:
+    method: DINOv3RGB
+    name: dinov3
+    mixins:
+    - fast_transfer
+    - rtx5090
+  preexisting_changes_outside_this_experiment:
+  - consts.yaml
+  - trackit/core/transforms/dataset_norm_stats.py
+  - trackit/models/methods/dinov2_missing/builder.py
+  - trackit/models/methods/dinov2_missing/model.py
+  - MMLoRAT conversion helpers/config/docs/tests
+  runtime_snapshot:
+  - resolved_config.json
+  - source_manifest.json
+  - working_tree.patch
+  - host_consts.yaml
+  - provenance.json
+backbone:
+  type: DINOv3 ViT-B/16
+  frozen: true
+  source_revision: 6876159a11b4df116f30f667f8c9888617df0751
+  weights:
+    path: pretrained_models/dinov3_vitb16_pretrain_lvd1689m-73cec8be.pth
+    sha256: 73cec8be7427c8655ceced13ce62f6e20a1fa90d1b4d4a550df17a1144081a7c
+  independent_blocks: 6
+  joint_blocks: 6
+  lora:
+    projections:
+    - Q
+    - V
+    rank: 32
+    alpha: 64
+    dropout: 0.05
+  trainable_parameters: 3550469
+inputs:
+  initial_template:
+  - 128
+  - 128
+  online_template:
+  - 128
+  - 128
+  search:
+  - 256
+  - 256
+  channels: 3
+  normalization: ImageNet
+  training_triplets: z/x interval max gap 100; d independently sampled from the same
+    track, not temporally ordered
+data:
+  dataset: GOT-10k
+  root_source: Local consts.yaml:GOT10k_PATH, captured with each run
+  splits:
+    train:
+      sequences: 9335
+      list_sha256: 1c9cfdd7ae9cad6f7cdda172873aacd126ff28357ffcf9e7c31ea0b9636ccf42
+    val:
+      sequences: 180
+      list_sha256: 049ba636fe03233d07c3ca7f4c0afaa55a1b1c5dceb2f49a01dbee92b7c15f41
+  fingerprint_scope: Split manifests; image bytes are not exhaustively hashed
+training:
+  epochs: 20
+  triplets_per_epoch: 131072
+  total_triplets: 2621440
+  batch_size: 64
+  gradient_accumulation: 1
+  optimizer_updates_per_epoch: 2048
+  total_optimizer_updates: 40960
+  seed: 42
+  instance_id: 42
+  optimizer: AdamW
+  fused: true
+  learning_rate: 0.0001
+  weight_decay: 0.05
+  no_weight_decay: role/modality embeddings and one-dimensional parameters
+  scheduler: 20-epoch cosine
+  warmup_epochs: 1
+  min_learning_rate: 1.0e-06
+  gradient_clip_norm: 1.0
+  precision: bfloat16
+  loss:
+  - IoU-aware BCE
+  - GIoU
+  future_prediction_enabled: false
+  reconstruction_enabled: false
+evaluation:
+  split: val
+  epochs:
+  - 2
+  - 5
+  - 10
+  - 15
+  - 20
+  selection_metric: val/average_overlap_GOT-10k-val
+  online_template_update_threshold: 0.84
+  hann_window_penalty: 0.45
+  keep_epoch_checkpoints: 20
+  keep_best: 1
+transfer:
+  format: full safetensors, unmerged LoRA
+  tir_initialization: Copy learned RGB shallow adapters and modality embedding; retain
+    shared deep adapters
+  feature_protocol: dinov3-isolated-final-ln-search-v1
+  interfaces:
+  - independent
+  - isolated
+  - joint
+  - frozen single-modality reference
+  - causal real-observation history
+  - current-frame reconstruction targets
+  - future ROI/motion targets
+performance:
+  gpu: RTX 5090 32GB
+  cpu_quota_cores: 25
+  loader_workers: 20
+  torch_cpu_threads: 4
+  opencv_cpu_threads: 1
+  pinned_async_transfer: true
+  attention_backend: PyTorch SDPA Flash Attention forward/backward
+  torch_compile: false
+  benchmark_report: docs/research/dinov3_rgb_rtx5090_tuning_2026-11-01.json
+  measured_triplets_per_second: 345.4257140182554
+  benchmark_scope: 128 real train sequences; forward/backward/clip, excluding optimizer
+    updates
+observability:
+  window_batches: 50
+  storage:
+  - JSONL window statistics
+  - epoch summaries
+  - console
+  - CSV/PNG analysis
+  wandb_project: DINOv3RGB
+  metrics:
+  - total/BCE/GIoU loss
+  - positive patch IoU
+  - foreground/background confidence
+  - positive patch count
+  - LR/weight-decay ranges
+  - pre-clip gradient norm
+  - batch/data wait
+  - throughput
+  - GPU allocation
+  - validation AO/SR/FPS
+reproducibility:
+  test_suite: 37 tracked tests plus 2 existing MMLoRAT workspace regression tests
+  source_and_configuration_sha256: true
+  pretrained_weights_sha256: true
+  dataset_split_manifest_sha256: true
+  earlier_unversioned_run: fast_transfer_r32_e20_b64_5090 was interrupted after some
+    updates; preserve logs and restart from official weights

@@ -640,3 +640,13 @@ FodyWeavers.xsd
 /wandb
 #/consts.yaml
 my-run.sh
+
+# Local training artifacts and credentials are not source versions.
+/output/
+/trackit/datasets/cache/
+/pretrained_models/*.pth
+/pretrained_models/*.pt
+/pretrained_models/*.bin
+/pretrained_models/*.safetensors
+.netrc
+wandb/settings

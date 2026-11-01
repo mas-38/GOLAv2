@@ -1,0 +1,12 @@
+- path: "run.num_epochs"
+  value: 1
+- path: "run.data.train.global_batch_size"
+  value: 2
+- path: "run.data.train.sampler.samples_per_epoch"
+  value: 8
+- path: "run.data.train.num_workers"
+  value: 0
+- path: "run.runner.train.optimization.lr_scheduler.parameters.warmup_epochs"
+  value: 0
+- path: "run.task.train.logging.interval"
+  value: 1

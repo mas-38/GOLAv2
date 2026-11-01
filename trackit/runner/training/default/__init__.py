@@ -173,6 +173,12 @@ class DefaultTrainer(Runner):
 
                 stat = {'lr': self._optimizer.param_groups[0]["lr"],
                         'weight_decay': self._optimizer.param_groups[0]["weight_decay"]}
+                metric_logger = get_current_metric_logger()
+                if metric_logger is not None and metric_logger.has_logger('jsonl'):
+                    for name in ('lr', 'weight_decay'):
+                        values = [group[name] for group in self._optimizer.param_groups]
+                        stat[name + '_min'] = min(values)
+                        stat[name + '_max'] = max(values)
                 if loss_scale is not None:
                     stat['loss_scale'] = loss_scale
                 if grad_norm is not None:

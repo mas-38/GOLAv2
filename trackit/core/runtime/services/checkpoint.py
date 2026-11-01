@@ -23,7 +23,7 @@ def load_state_to_registries(state_dict: dict, checkpoint_stateful_object_regist
                 state, is_main_process_only = state_dict[name]
                 if is_main_process_only and not is_main_process():
                     raise RuntimeError(f"{name} is main process only, but current process is not main process")
-                parameters.set_state_fn(state_dict[name])
+                parameters.set_state_fn(state)
                 del state_dict[name]
             elif strict:
                 raise RuntimeError(f"Missing key {name} in checkpoint state dict")

@@ -87,18 +87,28 @@ def _get_rng_state():
     import numpy as np
     import random
     import torch
-    return {'numpy': np.random.get_state(),
-            'python': random.getstate(),
-            'torch': torch.get_rng_state()}
+    numpy_state = np.random.get_state()
+    # Primitive values keep new application checkpoints compatible with
+    # PyTorch >= 2.6's default weights_only loader.
+    numpy_state = (numpy_state[0], numpy_state[1].tolist(), *numpy_state[2:])
+    state = {'numpy': numpy_state,
+             'python': random.getstate(),
+             'torch': torch.get_rng_state()}
+    if torch.cuda.is_initialized():
+        state['cuda'] = torch.cuda.get_rng_state_all()
+    return state
 
 
 def _load_rng_state(state_dict: dict):
     import numpy as np
     import random
     import torch
-    np.random.set_state(state_dict['numpy'])
+    numpy_state = state_dict['numpy']
+    np.random.set_state((numpy_state[0], np.asarray(numpy_state[1], dtype=np.uint32), *numpy_state[2:]))
     random.setstate(state_dict['python'])
     torch.set_rng_state(state_dict['torch'])
+    if 'cuda' in state_dict and torch.cuda.is_available():
+        torch.cuda.set_rng_state_all(state_dict['cuda'])
 
 
 @dataclass(frozen=True)
