@@ -72,6 +72,8 @@ def build_default_training_runner(runner_config: dict, build_context: BuildConte
 
     detect_unused_parameters = runner_config['detect_unused_parameters']
 
-    return DefaultTrainer(model, criterion, optimization_modules_and_options,
-                          ddp_option, torch_compile_options, detect_unused_parameters,
-                          runner_config.get('gola_orthogonal_loss_weight', 0.))
+    runner = DefaultTrainer(model, criterion, optimization_modules_and_options,
+                            ddp_option, torch_compile_options, detect_unused_parameters,
+                            runner_config.get('gola_orthogonal_loss_weight', 0.))
+    build_context.services.checkpoint.register('trainer', runner.get_state, runner.set_state)
+    return runner

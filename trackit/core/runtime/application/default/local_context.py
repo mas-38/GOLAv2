@@ -135,7 +135,7 @@ class ApplicationContext:
         self.iteration.load_state(state_dict['iteration'])
 
         checkpoint_registries = self._get_checkpoint_registries()
-        load_state_to_registries(state_dict['objects'], checkpoint_registries)
+        load_state_to_registries(state_dict['objects'], checkpoint_registries, strict=True)
 
         _load_rng_state(state_dict['rng'])
 

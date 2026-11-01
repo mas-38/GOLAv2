@@ -1,9 +1,9 @@
 schema_version: 1
 experiment_id: dinov3_rgb_got10k_v1
-version: 1.0.0
+version: 1.0.1
 purpose: RGB tracking task pretraining for RGB-T missing-modality fine-tuning
 code:
-  branch: codex/dinov3-rgb-lora-got10k-v1
+  branch: codex/fix-rgb-training-resume
   commit: Recorded from Git HEAD at launch in diagnostics/provenance.json
   configuration:
     method: DINOv3RGB
@@ -148,8 +148,18 @@ observability:
   - throughput
   - GPU allocation
   - validation AO/SR/FPS
+checkpointing:
+  trainer_state_key: /runner/train/trainer
+  required_registered_state_on_resume: true
+  optimizer_moments_saved: true
+  learning_rate_and_weight_decay_schedulers_saved: true
+  amp_scaler_and_trainer_iteration_saved: true
+  resume_validation: CPU application checkpoint round trip and exact subsequent-update comparison
+  tested_gradient_accumulation: 1
+  tested_ema: false
+  legacy_missing_trainer_state: reject application resume; model weights remain loadable
 reproducibility:
-  test_suite: 37 tracked tests plus 2 existing MMLoRAT workspace regression tests
+  test_suite: 40 tracked CPU tests, including optimizer/scheduler resume integration
   source_and_configuration_sha256: true
   pretrained_weights_sha256: true
   dataset_split_manifest_sha256: true

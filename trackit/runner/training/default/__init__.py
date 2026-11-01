@@ -230,6 +230,10 @@ class DefaultTrainer(Runner):
             state_dict['lr_scheduler_per_iteration'] = self._lr_scheduler_per_iteration.state_dict()
         if self._lr_scheduler_per_epoch is not None:
             state_dict['lr_scheduler'] = self._lr_scheduler_per_epoch.state_dict()
+        if self._wd_scheduler_per_iteration is not None:
+            state_dict['weight_decay_scheduler_per_iteration'] = self._wd_scheduler_per_iteration.state_dict()
+        if self._wd_scheduler_per_epoch is not None:
+            state_dict['weight_decay_scheduler'] = self._wd_scheduler_per_epoch.state_dict()
         state_dict['amp_param_updater'] = self._parameter_updater.state_dict()
         if self._ema is not None:
             state_dict['ema'] = self._ema.state_dict()
@@ -247,6 +251,10 @@ class DefaultTrainer(Runner):
             self._lr_scheduler_per_iteration.load_state_dict(state_dict['lr_scheduler_per_iteration'])
         if self._lr_scheduler_per_epoch is not None:
             self._lr_scheduler_per_epoch.load_state_dict(state_dict['lr_scheduler'])
+        if self._wd_scheduler_per_iteration is not None:
+            self._wd_scheduler_per_iteration.load_state_dict(state_dict['weight_decay_scheduler_per_iteration'])
+        if self._wd_scheduler_per_epoch is not None:
+            self._wd_scheduler_per_epoch.load_state_dict(state_dict['weight_decay_scheduler'])
         if self._ema is not None:
             self._ema.load_state_dict(state_dict['ema'])
         self._parameter_updater.load_state_dict(state_dict['amp_param_updater'])

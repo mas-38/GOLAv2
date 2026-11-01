@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "patch_version": "1.0.1",
+  "base_commit": "c13996517758f035387416db223f55903c1b5176",
+  "branch": "codex/fix-rgb-training-resume",
+  "verified_utc": "2026-11-01T12:00:55.979432+00:00",
+  "isolation": {
+    "worktree": "/home/projects/GOLAv2-resume-fix",
+    "live_training_checkout": "/home/projects/GOLAv2",
+    "cuda_visible_devices": "",
+    "cpu_only": true,
+    "live_training_source_files_unchanged": true
+  },
+  "validation": {
+    "command": "CUDA_VISIBLE_DEVICES='' OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 python -m unittest discover -s tests -v",
+    "tests_run": 40,
+    "failures": 0,
+    "errors": 0,
+    "seconds": 1.99,
+    "log_sha256": "698eb1005a80b5bc8c85b1c567649d9b73dbef789afcea0db6053b39ca4796c3"
+  },
+  "resume_integration": {
+    "real_application_save_load_path": true,
+    "optimizer": "AdamW",
+    "saved_after_updates": 6,
+    "resumed_updates_compared": 6,
+    "dropout_enabled": true,
+    "trainable_criterion": true,
+    "enabled_cpu_grad_scaler": true,
+    "scheduler_cases": [
+      {
+        "lr": "per_iteration",
+        "weight_decay": "none"
+      },
+      {
+        "lr": "per_iteration",
+        "weight_decay": "cosine"
+      },
+      {
+        "lr": "per_epoch",
+        "weight_decay": "none"
+      },
+      {
+        "lr": "per_epoch",
+        "weight_decay": "cosine"
+      }
+    ],
+    "state_verified": [
+      "Adam step counters",
+      "exp_avg",
+      "exp_avg_sq",
+      "optimizer parameter groups",
+      "LR scheduler",
+      "weight-decay scheduler when enabled",
+      "AMP scale and growth tracker",
+      "trainable criterion",
+      "trainer iteration",
+      "application epoch and sample counters"
+    ],
+    "comparison": {
+      "method": "exact nested comparison; torch.testing.assert_close",
+      "rtol": 0,
+      "atol": 0,
+      "all_losses_parameters_and_training_states_equal": true
+    }
+  },
+  "compatibility": {
+    "legacy_missing_trainer_state": "explicit error; unavailable optimizer state cannot be reconstructed",
+    "model_weights": "remain usable for evaluation or fresh fine-tuning",
+    "limits": "CPU integration; accumulation 1 and EMA disabled. No distributed/CUDA bitwise equivalence claim."
+  }
+}

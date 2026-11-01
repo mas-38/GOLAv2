@@ -424,3 +424,40 @@ python -m unittest discover -s tests -p 'test_*missing*.py' -v
 
 These checks establish implementation compatibility, not tracking accuracy or
 convergence. No trained RGB tracking scores are available yet.
+
+## Checkpoint resume fix (v1.0.1)
+
+The `codex/fix-rgb-training-resume` branch registers the default training runner's
+`get_state` / `set_state` with its checkpoint service. Application state now contains
+`objects['/runner/train/trainer']`, including AdamW parameter groups, step counters
+and first/second moments, trainer iteration, LR scheduler, AMP scaler and trainable
+criterion state. Optional weight-decay schedulers are saved/restored as well.
+Model weights remain in the paired `model.bin` file.
+
+Application resume requires every registered component. Old v1 state files that
+contain only sampler/RNG/counter state fail with a missing trainer-state error,
+instead of silently restarting the optimizer and scheduler. Lost optimizer state
+cannot be reconstructed from those files. Existing model weights remain valid
+for evaluation or a new fine-tuning run with `--weight_path` alone.
+
+Verification uses the real application builder, trainer, AdamW, checkpoint dumper,
+safetensors weight loader and application-state loader on a small CPU network with
+dropout and a trainable criterion. It saves after two epochs/six updates, builds a
+fresh application, and verifies every optimizer/scheduler/AMP state field before
+continuing. The next update and all six remaining updates match uninterrupted
+training exactly: losses, parameters, Adam moments, LR/weight decay, AMP scale and
+growth tracker. Cases cover per-iteration and per-epoch LR schedules, each with and
+without a weight-decay schedule. An enabled CPU GradScaler exercises nonempty AMP
+state without using the live training GPU. These cases use accumulation 1 and no
+EMA; they do not claim distributed/CUDA bitwise-equivalence coverage.
+
+Run the focused check with:
+
+```sh
+CUDA_VISIBLE_DEVICES='' OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 \
+python -m unittest discover -s tests -p test_training_resume.py -v
+```
+
+The repair is developed in `/home/projects/GOLAv2-resume-fix`. It is not applied to
+the active `/home/projects/GOLAv2` checkout, and does not change or restart the
+ongoing `c139965` training process or its existing checkpoint files.
